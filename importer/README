@@ -1,0 +1,2 @@
+- Ldap must have created a posix group named "gecos", its necessary to pass the posix group dependency in ldap user creation
+- Ldap must have added the schemas in ldap_schemas directory
