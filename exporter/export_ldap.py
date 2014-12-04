@@ -23,6 +23,7 @@ GECOSCC_API_USERNAME = "adminemergya"
 GECOSCC_API_PASSWORD = "adminemergya"
 GECOSCC_API_DOMAIN_ID = "5480374100251c1770b7819e"  # Domain id
 GECOSCC_API_MASTER = True  # True LDAP is master, False GCC is master
+SYSTEM_TYPE = 'ldap'
 
 
 class NoUniqueException(Exception):
@@ -166,7 +167,8 @@ def create_file_and_send(domain_xml):
                         auth=(GECOSCC_API_USERNAME,
                               GECOSCC_API_PASSWORD),
                         data={'domainId': GECOSCC_API_DOMAIN_ID,
-                              'master': GECOSCC_API_MASTER})
+                              'master': GECOSCC_API_MASTER,
+                              'systemType': SYSTEM_TYPE})
     tf_read.close()
     f_zip_read.close()
     print res.content
