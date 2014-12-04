@@ -22,7 +22,7 @@ GECOSCC_API_URL = "http://gecoscc/api/ad_import/"  # This is a demo GECOSCC
 GECOSCC_API_USERNAME = "adminemergya"
 GECOSCC_API_PASSWORD = "adminemergya"
 GECOSCC_API_DOMAIN_ID = "5480374100251c1770b7819e"  # Domain id
-GECOSCC_API_MASTER = False  # True LDAP is master, False GCC is master
+GECOSCC_API_MASTER = True  # True LDAP is master, False GCC is master
 
 
 class NoUniqueException(Exception):
@@ -90,7 +90,8 @@ def create_user_element(user, user_plural, group_index):
     user_xml.set('Name', user[1]['cn'][0])
     user_xml.set('PrimaryGroup', '')
     user_xml.set('EmailAddress', '')
-    user_xml.set('DisplayName', '')
+    user_xml.set('DisplayName', user[1]['givenName'][0])
+    user_xml.set('LastName', user[1]['sn'][0])
     user_xml.set('OfficePhone', '')
 
     member_xml = ET.SubElement(user_xml, 'MemberOf')
