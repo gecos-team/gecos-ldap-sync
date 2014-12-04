@@ -29,6 +29,10 @@ class NoUniqueException(Exception):
     pass
 
 
+class NoLDAPDataException(Exception):
+    pass
+
+
 def connection_to_ldap():
     try:
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, 0)
@@ -63,11 +67,34 @@ def search(lcon, search_filter, unique=False):
     return result_set
 
 
+def check_ldap_data(data):
+    if len(data) == 2:
+        if isinstance(data[0], basestring) and isinstance(data[1], dict):
+            return True
+    raise NoLDAPDataException
+
+
+def get_ldap_cn(data):
+    return data[0]
+
+
+def get_ldap_attr(data, attr, default='', unique=True):
+    value = data[1].get(attr, None)
+    if value:
+        if unique:
+            if len(value) == 1:
+                return value[0]
+            raise NoUniqueException
+        return value
+    return default
+
+
 def create_domain_xml(domain):
+    check_ldap_data(domain)
     domain_xml = ET.Element('Domain')
-    domain_xml.set('ObjectGUID', domain[0])
-    domain_xml.set('DistinguishedName', domain[0])
-    domain_xml.set('Name', domain[1]['dc'][0])
+    domain_xml.set('ObjectGUID', get_ldap_cn(domain))
+    domain_xml.set('DistinguishedName', get_ldap_cn(domain))
+    domain_xml.set('Name', get_ldap_attr(domain, 'dc'))
     return domain_xml
 
 
@@ -76,42 +103,47 @@ def create_subelement_plural(domain_xml, name):
 
 
 def create_ou_element(ou, ou_plural):
+    check_ldap_data(ou)
     ou_xml = ET.SubElement(ou_plural, 'OrganizationalUnit')
-    ou_xml.set('ObjectGUID', ou[0])
-    ou_xml.set('DistinguishedName', ou[0])
-    ou_xml.set('Name', ou[1]['ou'][0])
+    ou_xml.set('ObjectGUID', get_ldap_cn(ou))
+    ou_xml.set('DistinguishedName', get_ldap_cn(ou))
+    ou_xml.set('Name', get_ldap_attr(ou, 'ou'))
     ou_xml.set('Description', '')
 
 
 def create_user_element(user, user_plural, group_index):
     user_xml = ET.SubElement(user_plural, 'User')
-    user_xml.set('ObjectGUID', user[0])
-    user_xml.set('DistinguishedName', user[0])
-    user_xml.set('Name', user[1]['cn'][0])
+    user_xml.set('ObjectGUID', get_ldap_cn(user))
+    user_xml.set('DistinguishedName', get_ldap_cn(user))
+    user_xml.set('Name', get_ldap_attr(user, 'cn'))
     user_xml.set('PrimaryGroup', '')
     user_xml.set('EmailAddress', '')
-    user_xml.set('DisplayName', user[1]['givenName'][0])
-    user_xml.set('LastName', user[1]['sn'][0])
+    user_xml.set('DisplayName', get_ldap_attr(user, 'givenName'))
+    user_xml.set('LastName', get_ldap_attr(user, 'sn'))
     user_xml.set('OfficePhone', '')
 
     member_xml = ET.SubElement(user_xml, 'MemberOf')
-    for gid in user[1]['gidNumber']:
+    for gid in get_ldap_attr(user, 'gidNumber', [], unique=False):
         item_xml = ET.SubElement(member_xml, 'Item')
-        item_xml.text = group_index[gid][0]
+        item_xml.text = get_ldap_cn(group_index[gid])
 
 
 def create_group_index(groups):
     group_index = {}
     for group in groups:
-        group_index[group[1]['gidNumber'][0]] = group
+        gid = get_ldap_attr(group, 'gidNumber')
+        if not gid:
+            continue
+        group_index[gid] = group
     return group_index
 
 
 def create_group_element(group, group_plural):
+    check_ldap_data(group)
     group_xml = ET.SubElement(group_plural, 'Group')
-    group_xml.set('ObjectGUID', group[0])
-    group_xml.set('DistinguishedName', group[0])
-    group_xml.set('Name', group[1]['cn'][0])
+    group_xml.set('ObjectGUID', get_ldap_cn(group))
+    group_xml.set('DistinguishedName', get_ldap_cn(group))
+    group_xml.set('Name', get_ldap_attr(group, 'cn'))
     group_xml.set('Description', '')
 
 
