@@ -13,15 +13,18 @@ except ImportError:
 
 
 LDAP_SERVER_EMG = 'ldap://LDAP_URL:389'
+LDAP_SERVER_EMG = 'ldap://172.17.0.3:389'
 BIND_DN = 'cn=admin,dc=test,dc=com'
 BIND_PASS = '****'
+BIND_PASS = '1234'
 BASE_DN = 'dc=test,dc=com'
 SEARCH_SCOPE = ldap.SCOPE_SUBTREE
 
 GECOSCC_API_URL = "http://gecoscc/api/ad_import/"  # This is a demo GECOSCC
+GECOSCC_API_URL = "http://10.35.3.120:6543/api/ad_import/"  # This is a demo GECOSCC
 GECOSCC_API_USERNAME = "adminemergya"
 GECOSCC_API_PASSWORD = "adminemergya"
-GECOSCC_API_DOMAIN_ID = "547f2e4e00251c336d4cabbd"  # Domain id
+GECOSCC_API_DOMAIN_ID = "5480374100251c1770b7819e"  # Domain id
 GECOSCC_API_MASTER = False  # True LDAP is master, False GCC is master
 
 
@@ -40,7 +43,7 @@ def connection_to_ldap():
     return lcon
 
 
-def search(search_filter, unique=False):
+def search(lcon, search_filter, unique=False):
     try:
         ldap_result_id = lcon.search(BASE_DN, SEARCH_SCOPE, search_filter)
         result_set = []
@@ -86,7 +89,7 @@ def create_ou_element(ou, ou_plural):
 def create_user_element(user, user_plural):
     user_xml = ET.SubElement(user_plural, 'User')
     user_xml.set('ObjectGUID', user[0])
-    user_xml.set('DistinguishedName', ou[0])
+    user_xml.set('DistinguishedName', user[0])
     user_xml.set('Name', user[1]['cn'][0])
     user_xml.set('PrimaryGroup', '')
     user_xml.set('EmailAddress', '')
@@ -118,24 +121,31 @@ def create_file_and_send(domain_xml):
     f_zip_read.close()
     print res.content
 
-if __name__ == '__main__':
+
+def main():
     lcon = connection_to_ldap()
     if not lcon:
         print 'Connection error'
+        return 1
 
-    domain = search('objectClass=dcObject', unique=True)
+    domain = search(lcon, 'objectClass=dcObject', unique=True)
     domain_xml = create_domain_xml(domain)
 
-    ous = search('objectClass=organizationalUnit')
+    ous = search(lcon, 'objectClass=organizationalUnit')
+
     ou_plural = create_subelement_plural(domain_xml, 'OrganizationalUnits')
 
     for ou in ous:
         create_ou_element(ou, ou_plural)
 
-    users = search('objectClass=inetOrgPerson')
+    users = search(lcon, 'objectClass=inetOrgPerson')
     user_plural = create_subelement_plural(domain_xml, 'Users')
 
     for user in users:
         create_user_element(user, user_plural)
 
     create_file_and_send(domain_xml)
+
+
+if __name__ == '__main__':
+    main()
