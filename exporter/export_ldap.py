@@ -83,7 +83,7 @@ def create_ou_element(ou, ou_plural):
     ou_xml.set('Description', '')
 
 
-def create_user_element(user, user_plural):
+def create_user_element(user, user_plural, group_index):
     user_xml = ET.SubElement(user_plural, 'User')
     user_xml.set('ObjectGUID', user[0])
     user_xml.set('DistinguishedName', user[0])
@@ -92,6 +92,26 @@ def create_user_element(user, user_plural):
     user_xml.set('EmailAddress', '')
     user_xml.set('DisplayName', '')
     user_xml.set('OfficePhone', '')
+
+    member_xml = ET.SubElement(user_xml, 'MemberOf')
+    for gid in user[1]['gidNumber']:
+        item_xml = ET.SubElement(member_xml, 'Item')
+        item_xml.text = group_index[gid][0]
+
+
+def create_group_index(groups):
+    group_index = {}
+    for group in groups:
+        group_index[group[1]['gidNumber'][0]] = group
+    return group_index
+
+
+def create_group_element(group, group_plural):
+    group_xml = ET.SubElement(group_plural, 'Group')
+    group_xml.set('ObjectGUID', group[0])
+    group_xml.set('DistinguishedName', group[0])
+    group_xml.set('Name', group[1]['cn'][0])
+    group_xml.set('Description', '')
 
 
 def create_file_and_send(domain_xml):
@@ -135,11 +155,19 @@ def main():
     for ou in ous:
         create_ou_element(ou, ou_plural)
 
+    groups = search(lcon, 'objectClass=posixGroup')
+    group_index = create_group_index(groups)
+
     users = search(lcon, 'objectClass=inetOrgPerson')
     user_plural = create_subelement_plural(domain_xml, 'Users')
 
     for user in users:
-        create_user_element(user, user_plural)
+        create_user_element(user, user_plural, group_index)
+
+    group_plural = create_subelement_plural(domain_xml, 'Groups')
+
+    for group in groups:
+        create_group_element(group, group_plural)
 
     create_file_and_send(domain_xml)
 
