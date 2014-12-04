@@ -1,0 +1,43 @@
+#dn: cn=core,cn=schema,cn=config
+#objectClass: olcSchemaConfig
+#cn: core
+#olcAttributeTypes: ( 2.5.4.0.178 NAME 'kikevariableeeee' DESC 'RFC2256: X.509 user
+#  certificate, use ;binary' EQUALITY certificateExactMatch SYNTAX 1.3.6.1.4.1.
+# 1466.115.121.1.8 )
+#olcObjectClasses: ( 2.5.6.0.801 NAME 'kikeobjecttttt' DESC 'RFC2587: a PKI user' S
+# UP top AUXILIARY MAY kikevariableeeee )
+#
+
+attributetype ( 2.5.4.0.200 NAME 'gecosID'
+  DESC 'Gecos ID field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.201 NAME 'gecosExtra'
+  DESC 'Gecos Extra field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.202 NAME 'gecosPath'
+  DESC 'Gecos Path field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.203 NAME 'gecosName'
+  DESC 'Gecos Name field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.204 NAME 'gecosSource'
+  DESC 'Gecos Source field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.205 NAME 'gecosMaster'
+  DESC 'Gecos Source field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.206 NAME 'gecosLock'
+  DESC 'Gecos Path field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 )
+
+objectclass ( 2.5.6.0.100 NAME 'gecosOU'
+  DESC 'Gecos ou'
+  SUP top AUXILIARY
+  MAY (gecosID $ gecosExtra $ gecosPath $ gecosName $ gecosSource $ gecosMaster $ gecosLock ))
+
