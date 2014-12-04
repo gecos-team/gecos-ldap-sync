@@ -13,15 +13,12 @@ except ImportError:
 
 
 LDAP_SERVER_EMG = 'ldap://LDAP_URL:389'
-LDAP_SERVER_EMG = 'ldap://172.17.0.3:389'
 BIND_DN = 'cn=admin,dc=test,dc=com'
 BIND_PASS = '****'
-BIND_PASS = '1234'
 BASE_DN = 'dc=test,dc=com'
 SEARCH_SCOPE = ldap.SCOPE_SUBTREE
 
 GECOSCC_API_URL = "http://gecoscc/api/ad_import/"  # This is a demo GECOSCC
-GECOSCC_API_URL = "http://10.35.3.120:6543/api/ad_import/"  # This is a demo GECOSCC
 GECOSCC_API_USERNAME = "adminemergya"
 GECOSCC_API_PASSWORD = "adminemergya"
 GECOSCC_API_DOMAIN_ID = "5480374100251c1770b7819e"  # Domain id
