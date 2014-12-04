@@ -131,6 +131,7 @@ def create_user_element(user, user_plural, group_index):
 def create_group_index(groups):
     group_index = {}
     for group in groups:
+        check_ldap_data(group)
         gid = get_ldap_attr(group, 'gidNumber')
         if not gid:
             continue
@@ -139,7 +140,6 @@ def create_group_index(groups):
 
 
 def create_group_element(group, group_plural):
-    check_ldap_data(group)
     group_xml = ET.SubElement(group_plural, 'Group')
     group_xml.set('ObjectGUID', get_ldap_cn(group))
     group_xml.set('DistinguishedName', get_ldap_cn(group))
