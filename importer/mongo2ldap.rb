@@ -10,17 +10,12 @@ mongo_host = 'localhost'
 mongo_db = 'gecoscc'
 mongo_port = '27017'
 data_types = ['ou', 'user']
-ldap_host = '172.17.0.3'
+ldap_host = '172.17.0.2'
 ldap_port = '389'
 ldap_auth = 'cn=admin,dc=test,dc=com'
 ldap_pw = '1234'
 ldap_treebase = "dc=test, dc=com"
 
-#group_base should be created in ldap to fix "posix group" ldap user dependency
-group_base = "group1"
-
-
-# Clase que coge los datos de mongo, los trata y los envia al ldap
 class Gecoscc2ldap
   def initialize(mongo_id_root,mongo_host, mongo_db, mongo_port, data_types,ldap_host, ldap_port, ldap_auth, ldap_pw, ldap_treebase, id_hash={})
     @mongo_id_root = mongo_id_root
@@ -58,9 +53,7 @@ class Gecoscc2ldap
 
   def split_data(data, dtype, level_root)
     level = level_root
-    a = []
     while level != 0 do
-      full_data = data
 
       count_not_found = 1
       data.each do |v|
@@ -106,12 +99,7 @@ class Gecoscc2ldap
        # removing 2 first id from path (root and main ou)
        array_path.shift(2)
        array_path.each do |id| 
-         @full_data.each do |data_value|
-           data_value_h = data_value.to_h
-           if data_value_h["_id"].to_s == id and data_value_h["type"] == "ou"
-             dn.insert(0, "ou=#{data_value_h["name"]},")
-           end
-         end
+       dn.insert(0, "ou=#{@id_hash[id]},")
        end
       end
     end
@@ -136,44 +124,71 @@ class Gecoscc2ldap
 
         if ldap_object.dn.downcase == dn.downcase
            if data["master"] == "gecos"
-             p "La OU ya esta creada"
              mod_ldap_data(ldap, data, treebase, dn)
              check = 1
            end
         end
       end
       if check == 0
-        p "Insertamos OU"
         insert_ldap_data(ldap, data, treebase, dn)
       end
     elsif data["type"] == 'user'
-      puts "CREAMOS USUARIO" 
+      filter = Net::LDAP::Filter.eq('objectclass', 'inetOrgPerson')
+      ldap.search(:base => ldap_treebase, :filter => filter) do |ldap_object|
+        level_ldap = ldap_object.dn
+        level_ldap.slice!(",#{treebase}")
+
+        if ldap_object.dn.downcase == dn.downcase
+           mod_ldap_data(ldap, data, treebase, dn)
+           check = 1
+        end
+      end
+      if check == 0
+        insert_ldap_data(ldap, data, treebase, dn)
+      end
     end
 
   end
 
   def mod_ldap_data(ldap, data_hashed, treebase, dn)
-    puts "modificamos movidas"
+    puts "Mod data #{data_hashed['name']}"
+    if data_hashed["type"] == 'ou'
+      if !data_hashed['extra'].empty?; ldap.replace_attribute(dn, :GecosExtra ,data_hashed['extra'])  ; end
+      if !data_hashed['master'].empty?; ldap.replace_attribute(dn, :GecosMaster ,data_hashed['master']) ; end
+      if !data_hashed['source'].empty?; ldap.replace_attribute(dn, :GecosSource ,data_hashed['source']) ; end
+      if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
+      if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
+      ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
+    elsif data_hashed["type"] =='user'
+      puts "Mod user"
+      if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
+      if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :sn, data_hashed['name']); end
+      ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
+    end
+
   end
 
   def insert_ldap_data(ldap, data_hashed, treebase, dn)
-    puts "insertamos "
     attributes = {}
     if data_hashed["type"] == 'ou'
+    puts "Adding OU #{data_hashed['name']}"
       if !data_hashed['extra'].empty?; attributes.merge!(:gecosExtra => data_hashed['extra']) ; end
       if !data_hashed['master'].empty?; attributes.merge!(:gecosMaster => data_hashed['master']) ; end
       if !data_hashed['source'].empty?; attributes.merge!(:gecosSource => data_hashed['source']) ; end
-      if !data_hashed['master'].empty?; attributes.merge!(:gecosMaster => data_hashed['master']) ; end
       if !data_hashed['name'].empty?; attributes.merge!(:gecosName => data_hashed['name']) ; end
       if !data_hashed['path'].empty?; attributes.merge!(:gecosPath => data_hashed['path']) ; end
       attributes.merge!(:gecosID => data_hashed['_id'].to_s)
       attributes.merge!(:objectclass => ['top','organizationalunit','gecosOU'])
       ldap.add(:dn => dn, :attributes => attributes)
-      p ldap.get_operation_result
-#    elsif dtype = 'user'
-#      p data
-#      p dtype
-#      p "================="
+      #p ldap.get_operation_result
+    elsif data_hashed["type"] == 'user'
+      puts "Adding user #{data_hashed['name']}"
+      if !data_hashed['name'].empty?; attributes.merge!(:gecosName => data_hashed['name']) ; end
+      if !data_hashed['name'].empty?; attributes.merge!(:sn => data_hashed['name']) ; end
+      attributes.merge!(:gecosID => data_hashed['_id'].to_s)
+      attributes.merge!(:objectclass => ['inetOrgPerson','top','gecosOU'])
+      ldap.add(:dn => dn, :attributes => attributes)
+      #p ldap.get_operation_result
     end
 
   end
