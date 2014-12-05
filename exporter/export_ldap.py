@@ -21,11 +21,16 @@ SEARCH_SCOPE = ldap.SCOPE_SUBTREE
 GECOSCC_API_URL = "http://gecoscc/api/ad_import/"  # This is a demo GECOSCC
 GECOSCC_API_USERNAME = "adminemergya"
 GECOSCC_API_PASSWORD = "adminemergya"
-GECOSCC_API_DOMAIN_ID = "547f2e4e00251c336d4cabbd"  # Domain id
-GECOSCC_API_MASTER = False  # True LDAP is master, False GCC is master
+GECOSCC_API_DOMAIN_ID = "5480374100251c1770b7819e"  # Domain id
+GECOSCC_API_MASTER = True  # True LDAP is master, False GCC is master
+SYSTEM_TYPE = 'ldap'
 
 
 class NoUniqueException(Exception):
+    pass
+
+
+class NoLDAPDataException(Exception):
     pass
 
 
@@ -40,7 +45,7 @@ def connection_to_ldap():
     return lcon
 
 
-def search(search_filter, unique=False):
+def search(lcon, search_filter, unique=False):
     try:
         ldap_result_id = lcon.search(BASE_DN, SEARCH_SCOPE, search_filter)
         result_set = []
@@ -63,11 +68,34 @@ def search(search_filter, unique=False):
     return result_set
 
 
+def check_ldap_data(data):
+    if len(data) == 2:
+        if isinstance(data[0], basestring) and isinstance(data[1], dict):
+            return True
+    raise NoLDAPDataException
+
+
+def get_ldap_cn(data):
+    return data[0]
+
+
+def get_ldap_attr(data, attr, default='', unique=True):
+    value = data[1].get(attr, None)
+    if value:
+        if unique:
+            if len(value) == 1:
+                return value[0]
+            raise NoUniqueException
+        return value
+    return default
+
+
 def create_domain_xml(domain):
+    check_ldap_data(domain)
     domain_xml = ET.Element('Domain')
-    domain_xml.set('ObjectGUID', domain[0])
-    domain_xml.set('DistinguishedName', domain[0])
-    domain_xml.set('Name', domain[1]['dc'][0])
+    domain_xml.set('ObjectGUID', get_ldap_cn(domain))
+    domain_xml.set('DistinguishedName', get_ldap_cn(domain))
+    domain_xml.set('Name', get_ldap_attr(domain, 'dc'))
     return domain_xml
 
 
@@ -76,22 +104,48 @@ def create_subelement_plural(domain_xml, name):
 
 
 def create_ou_element(ou, ou_plural):
+    check_ldap_data(ou)
     ou_xml = ET.SubElement(ou_plural, 'OrganizationalUnit')
-    ou_xml.set('ObjectGUID', ou[0])
-    ou_xml.set('DistinguishedName', ou[0])
-    ou_xml.set('Name', ou[1]['ou'][0])
+    ou_xml.set('ObjectGUID', get_ldap_cn(ou))
+    ou_xml.set('DistinguishedName', get_ldap_cn(ou))
+    ou_xml.set('Name', get_ldap_attr(ou, 'ou'))
     ou_xml.set('Description', '')
 
 
-def create_user_element(user, user_plural):
+def create_user_element(user, user_plural, group_index):
     user_xml = ET.SubElement(user_plural, 'User')
-    user_xml.set('ObjectGUID', user[0])
-    user_xml.set('DistinguishedName', ou[0])
-    user_xml.set('Name', user[1]['cn'][0])
+    user_xml.set('ObjectGUID', get_ldap_cn(user))
+    user_xml.set('DistinguishedName', get_ldap_cn(user))
+    user_xml.set('Name', get_ldap_attr(user, 'cn'))
     user_xml.set('PrimaryGroup', '')
     user_xml.set('EmailAddress', '')
-    user_xml.set('DisplayName', '')
+    user_xml.set('DisplayName', get_ldap_attr(user, 'givenName'))
+    user_xml.set('LastName', get_ldap_attr(user, 'sn'))
     user_xml.set('OfficePhone', '')
+
+    member_xml = ET.SubElement(user_xml, 'MemberOf')
+    for gid in get_ldap_attr(user, 'gidNumber', [], unique=False):
+        item_xml = ET.SubElement(member_xml, 'Item')
+        item_xml.text = get_ldap_cn(group_index[gid])
+
+
+def create_group_index(groups):
+    group_index = {}
+    for group in groups:
+        check_ldap_data(group)
+        gid = get_ldap_attr(group, 'gidNumber')
+        if not gid:
+            continue
+        group_index[gid] = group
+    return group_index
+
+
+def create_group_element(group, group_plural):
+    group_xml = ET.SubElement(group_plural, 'Group')
+    group_xml.set('ObjectGUID', get_ldap_cn(group))
+    group_xml.set('DistinguishedName', get_ldap_cn(group))
+    group_xml.set('Name', get_ldap_attr(group, 'cn'))
+    group_xml.set('Description', '')
 
 
 def create_file_and_send(domain_xml):
@@ -113,29 +167,45 @@ def create_file_and_send(domain_xml):
                         auth=(GECOSCC_API_USERNAME,
                               GECOSCC_API_PASSWORD),
                         data={'domainId': GECOSCC_API_DOMAIN_ID,
-                              'master': GECOSCC_API_MASTER})
+                              'master': GECOSCC_API_MASTER,
+                              'systemType': SYSTEM_TYPE})
     tf_read.close()
     f_zip_read.close()
     print res.content
 
-if __name__ == '__main__':
+
+def main():
     lcon = connection_to_ldap()
     if not lcon:
         print 'Connection error'
+        return 1
 
-    domain = search('objectClass=dcObject', unique=True)
+    domain = search(lcon, 'objectClass=dcObject', unique=True)
     domain_xml = create_domain_xml(domain)
 
-    ous = search('objectClass=organizationalUnit')
+    ous = search(lcon, 'objectClass=organizationalUnit')
+
     ou_plural = create_subelement_plural(domain_xml, 'OrganizationalUnits')
 
     for ou in ous:
         create_ou_element(ou, ou_plural)
 
-    users = search('objectClass=inetOrgPerson')
+    groups = search(lcon, 'objectClass=posixGroup')
+    group_index = create_group_index(groups)
+
+    users = search(lcon, 'objectClass=inetOrgPerson')
     user_plural = create_subelement_plural(domain_xml, 'Users')
 
     for user in users:
-        create_user_element(user, user_plural)
+        create_user_element(user, user_plural, group_index)
+
+    group_plural = create_subelement_plural(domain_xml, 'Groups')
+
+    for group in groups:
+        create_group_element(group, group_plural)
 
     create_file_and_send(domain_xml)
+
+
+if __name__ == '__main__':
+    main()
