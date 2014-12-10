@@ -1,0 +1,107 @@
+attributetype ( 2.5.4.0.300 NAME 'gecosID'
+  DESC 'Gecos ID field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.302 NAME 'gecosPath'
+  DESC 'Gecos Path field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.303 NAME 'gecosName'
+  DESC 'Gecos Name field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.304 NAME 'gecosSource'
+  DESC 'Gecos Source field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.305 NAME 'gecosMaster'
+  DESC 'Gecos Source field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.306 NAME 'gecosType'
+  DESC 'Gecos Type field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+objectclass ( 2.5.6.0.200 NAME 'gecoscc'
+  DESC 'GecosCC'
+  SUP top AUXILIARY
+  MAY ( gecosID $ gecosPath $ gecosName $ gecosSource $ gecosMaster $ gecosType ))
+ 
+attributetype ( 2.5.4.0.309 NAME 'gecosNodeChefId'
+  DESC 'Gecos Node_Chef_Id field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.310 NAME 'gecosFamily'
+  DESC 'Gecos Family field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+objectclass ( 2.5.6.0.203 NAME 'gecosComputer'
+  DESC 'GecosComputer'
+  SUP top AUXILIARY
+  MAY ( gecosNodeChefId $ gecosFamily ))
+
+attributetype ( 2.5.4.0.311 NAME 'gecosMembers'
+  DESC 'Gecos Members field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+objectclass ( 2.5.6.0.204 NAME 'gecosGroup'
+  DESC 'GecosGroup'
+  SUP top AUXILIARY
+  MAY gecosMembers)
+
+attributetype ( 2.5.4.0.307 NAME 'gecosExtra'
+  DESC 'Gecos Extra field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.308 NAME 'gecosLock'
+  DESC 'Gecos Path field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+objectclass ( 2.5.6.0.201 NAME 'gecosOU'
+  DESC 'GecosOU'
+  SUP top AUXILIARY
+  MAY ( gecosExtra $ gecosLock ))
+
+attributetype ( 2.5.4.0.312 NAME 'gecosRemoteDiskUri'
+  DESC 'Gecos Remote Disk URI field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+objectclass ( 2.5.6.0.205 NAME 'gecosRemoteDisk'
+  DESC 'GecosRemoteDisk'
+  SUP top AUXILIARY
+  MAY gecosRemoteDiskUri)
+
+attributetype ( 2.5.4.0.313 NAME 'gecosRepoKeyServer'
+  DESC 'Gecos Repo Key Server field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+
+attributetype ( 2.5.4.0.314 NAME 'gecosRepoUri'
+  DESC 'Gecos Repo URI field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+
+attributetype ( 2.5.4.0.315 NAME 'gecosRepoComponents'
+  DESC 'Gecos Repo Components field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+
+attributetype ( 2.5.4.0.316 NAME 'gecosRepoKey'
+  DESC 'Gecos Repo Key field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+
+attributetype ( 2.5.4.0.317 NAME 'gecosRepoDistribution'
+  DESC 'Gecos Repo dist field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+
+attributetype ( 2.5.4.0.318 NAME 'gecosRepoDebSrc'
+  DESC 'Gecos Repo deb_src field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.7 )
+
+objectclass ( 2.5.6.0.206 NAME 'gecosRepo'
+  DESC 'GecosRepo'
+  SUP top AUXILIARY
+  MAY (gecosRepoKeyServer $ gecosRepoKeyServer $ gecosRepoUri $ gecosRepoComponents $gecosRepoKey $ gecosRepoDistribution $ gecosRepoDebSrc ))
+
