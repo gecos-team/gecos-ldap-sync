@@ -278,13 +278,13 @@ class Gecoscc2ldap
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :cn ,data_hashed['name']) ; end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
-      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['path']) ; end
+      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['type']) ; end
       if !data_hashed['description'].empty?; ldap.replace_attribute(dn, :gecosPrinterDesc, data_hashed['description']); end
       if !data_hashed['printtype'].empty?; ldap.replace_attribute(dn, :gecosPrinterPrinttype, data_hashed['printtype']); end
       if !data_hashed['location'].empty?; ldap.replace_attribute(dn, :gecosPrinterLocation, data_hashed['location']); end
       if !data_hashed['uri'].empty?; ldap.replace_attribute(dn, :gecosPrinterUri, data_hashed['uri']); end
       if !data_hashed['connection'].empty?; ldap.replace_attribute(dn, :gecosPrinterConn, data_hashed['connection']); end
-      if !data_hashed['model'].empty?; ldap.replace_attribute(dn, :gecosPrinterModel, data_hashed['model']); end
+      if !data_hashed['model'].empty?; ldap.replace_attribute(dn, :gecosPrinterMod, data_hashed['model']); end
       if !data_hashed['ppd_uri'].empty?; ldap.replace_attribute(dn, :gecosPrinterPpduri, data_hashed['ppd_uri']); end
       if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :gecosPrinterType, data_hashed['type']); end
       if !data_hashed['serial'].empty?; ldap.replace_attribute(dn, :gecosPrinterSerial, data_hashed['serial']); end
@@ -377,13 +377,12 @@ class Gecoscc2ldap
       if !data_hashed['name'].empty?; attributes.merge!(:gecosName => data_hashed['name']) ; end
       if !data_hashed['path'].empty?; attributes.merge!(:gecosPath => data_hashed['path']) ; end
       if !data_hashed['type'].empty?; attributes.merge!(:gecosType => data_hashed['type']) ; end
-      if !data_hashed['uri'].empty?; attributes.merge!(:gecosRepoUri => data_hashed['uri']) ; end
       if !data_hashed['description'].empty?; attributes.merge!(:gecosPrinterDesc => data_hashed['description']) ; end
       if !data_hashed['printtype'].empty?; attributes.merge!(:gecosPrinterPrinttype => data_hashed['printtype']) ; end
       if !data_hashed['location'].empty?; attributes.merge!(:gecosPrinterLocation => data_hashed['location']) ; end
       if !data_hashed['uri'].empty?; attributes.merge!(:gecosPrinterUri => data_hashed['uri']) ; end
       if !data_hashed['connection'].empty?; attributes.merge!(:gecosPrinterConn => data_hashed['connection']) ; end
-      if !data_hashed['model'].empty?; attributes.merge!(:gecosPrinterModel => data_hashed['model']) ; end
+      if !data_hashed['model'].empty?; attributes.merge!(:gecosPrinterMod => data_hashed['model']) ; end
       if !data_hashed['ppd_uri'].empty?; attributes.merge!(:gecosPrinterPpduri => data_hashed['ppd_uri']) ; end
       if !data_hashed['type'].empty?; attributes.merge!(:gecosPrinterType => data_hashed['type']) ; end
       if !data_hashed['serial'].empty?; attributes.merge!(:gecosPrinterSerial => data_hashed['serial']) ; end
@@ -393,7 +392,7 @@ class Gecoscc2ldap
       attributes.merge!(:gecosID => data_hashed['_id'].to_s)
       attributes.merge!(:objectclass => ['olcSchemaConfig','gecoscc','gecosPrinter'])
       ldap.add(:dn => dn, :attributes => attributes)
-      #p ldap.get_operation_result
+      p ldap.get_operation_result
     end
 
   end
