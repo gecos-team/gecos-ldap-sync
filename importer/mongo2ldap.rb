@@ -1,12 +1,11 @@
 #!/usr/bin/env ruby -w
-# encoding: UTF-8
 
 require 'net-ldap'
 require 'mongo'
 require 'json'
 include Mongo
 
-mongo_id_root = "54887421e138230df51e66c1"
+mongo_id_root = "54339868e1382307482e07e0"
 mongo_host = 'localhost'
 mongo_db = 'gecoscc'
 mongo_port = '27017'
@@ -228,21 +227,21 @@ class Gecoscc2ldap
       if !data_hashed['source'].empty?; ldap.replace_attribute(dn, :GecosSource ,data_hashed['source']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
-      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['path']) ; end
+      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['type']) ; end
       ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
     elsif data_hashed["type"] =='user'
       puts "Mod User #{data_hashed['name']}"
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :sn, data_hashed['name']); end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
-      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['path']) ; end
+      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['type']) ; end
       ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
     elsif data_hashed["type"] =='computer'
       puts "Mod computer #{data_hashed['name']}"
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :cn ,data_hashed['name']) ; end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
-      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['path']) ; end
+      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['type']) ; end
       if !data_hashed['family'].empty?; ldap.replace_attribute(dn, :gecosFamily, data_hashed['family']); end
       if !data_hashed['node_chef_id'].empty?; ldap.replace_attribute(dn, :gecosNodeChefId, data_hashed['node_chef_id']); end
       ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
@@ -251,7 +250,7 @@ class Gecoscc2ldap
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :cn ,data_hashed['name']) ; end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
-      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['path']) ; end
+      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['type']) ; end
       if !data_hashed['members'].empty?; ldap.replace_attribute(dn, :gecosMembers, data_hashed['members'].to_s); end
       ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
     elsif data_hashed["type"] =='storage'
@@ -259,7 +258,7 @@ class Gecoscc2ldap
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :cn ,data_hashed['name']) ; end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
-      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['path']) ; end
+      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['type']) ; end
       if !data_hashed['uri'].empty?; ldap.replace_attribute(dn, :gecosRemoteDiskUri, data_hashed['uri']); end
       ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
     elsif data_hashed["type"] =='repository'
@@ -267,7 +266,7 @@ class Gecoscc2ldap
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :cn ,data_hashed['name']) ; end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
-      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['path']) ; end
+      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['type']) ; end
       if !data_hashed['key_server'].empty?; ldap.replace_attribute(dn, :gecosRepoKeyServer, data_hashed['key_server']); end
       if !data_hashed['uri'].empty?; ldap.replace_attribute(dn, :gecosRepoUri, data_hashed['uri']); end
       if !data_hashed['components'].empty?; ldap.replace_attribute(dn, :gecosRepoComponents, data_hashed['components'].to_s); end
@@ -392,7 +391,7 @@ class Gecoscc2ldap
       if !data_hashed['manufacturer'].empty?; attributes.merge!(:gecosPrinterManuf => data_hashed['manufacturer']) ; end
       attributes.merge!(:cn => data_hashed['name'])
       attributes.merge!(:gecosID => data_hashed['_id'].to_s)
-      attributes.merge!(:objectclass => ['olcSchemaConfig','gecoscc','gecosRepo'])
+      attributes.merge!(:objectclass => ['olcSchemaConfig','gecoscc','gecosPrinter'])
       ldap.add(:dn => dn, :attributes => attributes)
       #p ldap.get_operation_result
     end
