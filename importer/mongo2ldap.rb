@@ -1,16 +1,17 @@
 #!/usr/bin/env ruby -w
+# encoding: UTF-8
 
 require 'net-ldap'
 require 'mongo'
 require 'json'
 include Mongo
 
-mongo_id_root = "543fceb54fd25c0bf570b1fd"
+mongo_id_root = "54887421e138230df51e66c1"
 mongo_host = 'localhost'
 mongo_db = 'gecoscc'
 mongo_port = '27017'
-data_types = ['ou', 'user','computer','group','storage','repository']
-ldap_host = '172.17.0.13'
+data_types = ['ou', 'user','computer','group','storage','repository','printer']
+ldap_host = '172.17.0.2'
 ldap_port = '389'
 ldap_auth = 'cn=admin,dc=test,dc=com'
 ldap_pw = '1234'
@@ -121,7 +122,6 @@ class Gecoscc2ldap
       ldap.search(:base => ldap_treebase, :filter => filter) do |ldap_object|
         level_ldap = ldap_object.dn
         level_ldap.slice!(",#{treebase}")
-
         if ldap_object.dn.downcase == dn.downcase
            if data["master"] == "gecos"
              mod_ldap_data(ldap, data, treebase, dn)
@@ -188,9 +188,22 @@ class Gecoscc2ldap
       if check == 0
         insert_ldap_data(ldap, data, treebase, dn)
       end
-
     elsif data["type"] == 'repository'
       filter = Net::LDAP::Filter.eq('objectclass', 'gecosRepo')
+      ldap.search(:base => ldap_treebase, :filter => filter) do |ldap_object|
+        level_ldap = ldap_object.dn
+        level_ldap.slice!(",#{treebase}")
+
+        if ldap_object.dn.downcase == dn.downcase
+           mod_ldap_data(ldap, data, treebase, dn)
+           check = 1
+        end
+      end
+      if check == 0
+        insert_ldap_data(ldap, data, treebase, dn)
+      end
+    elsif data["type"] == 'printer'
+      filter = Net::LDAP::Filter.eq('objectclass', 'gecosPrinter')
       ldap.search(:base => ldap_treebase, :filter => filter) do |ldap_object|
         level_ldap = ldap_object.dn
         level_ldap.slice!(",#{treebase}")
@@ -261,6 +274,24 @@ class Gecoscc2ldap
       if !data_hashed['repo_key'].empty?; ldap.replace_attribute(dn, :gecosRepoKey, data_hashed['repo_key']); end
       if !data_hashed['distribution'].empty?; ldap.replace_attribute(dn, :gecosRepoDistribution, data_hashed['distribution']); end
       ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
+    elsif data_hashed["type"] =='printer'
+      puts "Mod Printer #{data_hashed['name']}"
+      if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
+      if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :cn ,data_hashed['name']) ; end
+      if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
+      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['path']) ; end
+      if !data_hashed['description'].empty?; ldap.replace_attribute(dn, :gecosPrinterDesc, data_hashed['description']); end
+      if !data_hashed['printtype'].empty?; ldap.replace_attribute(dn, :gecosPrinterPrinttype, data_hashed['printtype']); end
+      if !data_hashed['location'].empty?; ldap.replace_attribute(dn, :gecosPrinterLocation, data_hashed['location']); end
+      if !data_hashed['uri'].empty?; ldap.replace_attribute(dn, :gecosPrinterUri, data_hashed['uri']); end
+      if !data_hashed['connection'].empty?; ldap.replace_attribute(dn, :gecosPrinterConn, data_hashed['connection']); end
+      if !data_hashed['model'].empty?; ldap.replace_attribute(dn, :gecosPrinterModel, data_hashed['model']); end
+      if !data_hashed['ppd_uri'].empty?; ldap.replace_attribute(dn, :gecosPrinterPpduri, data_hashed['ppd_uri']); end
+      if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :gecosPrinterType, data_hashed['type']); end
+      if !data_hashed['serial'].empty?; ldap.replace_attribute(dn, :gecosPrinterSerial, data_hashed['serial']); end
+      if !data_hashed['registry'].empty?; ldap.replace_attribute(dn, :gecosPrinterRegistry, data_hashed['registry']); end
+      if !data_hashed['manufacturer'].empty?; ldap.replace_attribute(dn, :gecosPrinterManuf, data_hashed['manufacturer']); end
+      ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
 
     end
 
@@ -271,8 +302,8 @@ class Gecoscc2ldap
     if data_hashed["type"] == 'ou'
     puts "Adding OU #{data_hashed['name']}"
       if !data_hashed['extra'].empty?; attributes.merge!(:gecosExtra => data_hashed['extra']) ; end
-      if !data_hashed['master'].empty?; attributes.merge!(:gecosMaster => data_hashed['master']) ; end
-      if !data_hashed['source'].empty?; attributes.merge!(:gecosSource => data_hashed['source']) ; end
+      #if !data_hashed['master'].empty?; attributes.merge!(:gecosMaster => data_hashed['master']) ; end
+      #if !data_hashed['source'].empty?; attributes.merge!(:gecosSource => data_hashed['source']) ; end
       if !data_hashed['name'].empty?; attributes.merge!(:gecosName => data_hashed['name']) ; end
       if !data_hashed['path'].empty?; attributes.merge!(:gecosPath => data_hashed['path']) ; end
       if !data_hashed['type'].empty?; attributes.merge!(:gecosType => data_hashed['type']) ; end
@@ -315,7 +346,6 @@ class Gecoscc2ldap
       p attributes
       ldap.add(:dn => dn, :attributes => attributes)
       #p ldap.get_operation_result
-
    elsif data_hashed["type"] == 'storage'
       puts "Adding Storage #{data_hashed['name']}"
       if !data_hashed['name'].empty?; attributes.merge!(:gecosName => data_hashed['name']) ; end
@@ -328,8 +358,6 @@ class Gecoscc2ldap
       p attributes
       ldap.add(:dn => dn, :attributes => attributes)
       #p ldap.get_operation_result
-
-
    elsif data_hashed["type"] == 'repository'
       puts "Adding Repository #{data_hashed['name']}"
       if !data_hashed['name'].empty?; attributes.merge!(:gecosName => data_hashed['name']) ; end
@@ -343,9 +371,30 @@ class Gecoscc2ldap
       attributes.merge!(:cn => data_hashed['name'])
       attributes.merge!(:gecosID => data_hashed['_id'].to_s)
       attributes.merge!(:objectclass => ['olcSchemaConfig','gecoscc','gecosRepo'])
-      p attributes
       ldap.add(:dn => dn, :attributes => attributes)
-      p ldap.get_operation_result
+      #p ldap.get_operation_result
+   elsif data_hashed["type"] == 'printer'
+      puts "Adding Printer #{data_hashed['name']}"
+      if !data_hashed['name'].empty?; attributes.merge!(:gecosName => data_hashed['name']) ; end
+      if !data_hashed['path'].empty?; attributes.merge!(:gecosPath => data_hashed['path']) ; end
+      if !data_hashed['type'].empty?; attributes.merge!(:gecosType => data_hashed['type']) ; end
+      if !data_hashed['uri'].empty?; attributes.merge!(:gecosRepoUri => data_hashed['uri']) ; end
+      if !data_hashed['description'].empty?; attributes.merge!(:gecosPrinterDesc => data_hashed['description']) ; end
+      if !data_hashed['printtype'].empty?; attributes.merge!(:gecosPrinterPrinttype => data_hashed['printtype']) ; end
+      if !data_hashed['location'].empty?; attributes.merge!(:gecosPrinterLocation => data_hashed['location']) ; end
+      if !data_hashed['uri'].empty?; attributes.merge!(:gecosPrinterUri => data_hashed['uri']) ; end
+      if !data_hashed['connection'].empty?; attributes.merge!(:gecosPrinterConn => data_hashed['connection']) ; end
+      if !data_hashed['model'].empty?; attributes.merge!(:gecosPrinterModel => data_hashed['model']) ; end
+      if !data_hashed['ppd_uri'].empty?; attributes.merge!(:gecosPrinterPpduri => data_hashed['ppd_uri']) ; end
+      if !data_hashed['type'].empty?; attributes.merge!(:gecosPrinterType => data_hashed['type']) ; end
+      if !data_hashed['serial'].empty?; attributes.merge!(:gecosPrinterSerial => data_hashed['serial']) ; end
+      if !data_hashed['registry'].empty?; attributes.merge!(:gecosPrinterRegistry => data_hashed['registry']) ; end
+      if !data_hashed['manufacturer'].empty?; attributes.merge!(:gecosPrinterManuf => data_hashed['manufacturer']) ; end
+      attributes.merge!(:cn => data_hashed['name'])
+      attributes.merge!(:gecosID => data_hashed['_id'].to_s)
+      attributes.merge!(:objectclass => ['olcSchemaConfig','gecoscc','gecosRepo'])
+      ldap.add(:dn => dn, :attributes => attributes)
+      #p ldap.get_operation_result
     end
 
   end

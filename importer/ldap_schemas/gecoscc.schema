@@ -105,3 +105,51 @@ objectclass ( 2.5.6.0.206 NAME 'gecosRepo'
   SUP top AUXILIARY
   MAY (gecosRepoKeyServer $ gecosRepoKeyServer $ gecosRepoUri $ gecosRepoComponents $gecosRepoKey $ gecosRepoDistribution $ gecosRepoDebSrc ))
 
+attributetype ( 2.5.4.0.319 NAME 'gecosPrinterDesc'
+  DESC 'Gecos Printer Desc field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.320 NAME 'gecosPrinterPrinttype'
+  DESC 'Gecos Printer Printtype field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.321 NAME 'gecosPrinterUri'
+  DESC 'Gecos Printer Uri field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.322 NAME 'gecosPrinterLocation'
+  DESC 'Gecos Printer Location field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.323 NAME 'gecosPrinterConn'
+  DESC 'Gecos Printer Connection field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.324 NAME 'gecosPrinterMod'
+  DESC 'Gecos Printer Model field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.325 NAME 'gecosPrinterPpduri'
+  DESC 'Gecos Printer PPD URI field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.326 NAME 'gecosPrinterType'
+  DESC 'Gecos Printer Type field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.327 NAME 'gecosPrinterSerial'
+  DESC 'Gecos Printer Serial field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.328 NAME 'gecosPrinterManuf'
+  DESC 'Gecos Printer Manufacturer field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+attributetype ( 2.5.4.0.329 NAME 'gecosPrinterRegistry'
+  DESC 'Gecos Printer Registry field'
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 )
+
+objectclass ( 2.5.6.0.207 NAME 'gecosPrinter'
+  DESC 'GecosPrinter'
+  SUP top AUXILIARY
+  MAY ( gecosPrinterDesc $ gecosPrinterPrinttype $ gecosPrinterUri $ gecosPrinterLocation $gecosPrinterConn $ gecosPrinterMod $ gecosPrinterPpduri $ gecosPrinterType $ gecosPrinterSerial $ gecosPrinterManuf $ gecosPrinterRegistry ))
