@@ -7,13 +7,13 @@ gecos-ldap-sync
 ##### Ruby version
 Importer code should works on ruby 2.x
 
-###### Ldap
+##### Ldap
 The schemas must add to a Openldap instance, the schema is inside ldap_schemas subdir
 
-###### Installation
+##### Installation
 Just run "bundle" inside importer directory, all dependencies will be installed
 
-###### Configuration
+##### Configuration
 you should configure the next variables in the top of the file mongo2ldap.rb to get working the importer.
 
 ``` mongo_id_root ``` the ID, in String mode, of the domain in mongo you want import into ldap, its should be something like 54887421e138230df51e66c1
