@@ -5,6 +5,8 @@ require 'mongo'
 require 'json'
 include Mongo
 
+#mongo_id_root = "53c77f23e1382306f59eb0c8"
+#mongo_id_root = "54339868e1382307482e07e0"
 mongo_id_root = "54339868e1382307482e07e0"
 mongo_host = 'localhost'
 mongo_db = 'gecoscc'
@@ -40,14 +42,15 @@ class Gecoscc2ldap
     coll = db.collection('nodes')
     @data_types.each do |dtype|
       data = coll.find({:$or => [{:$and => [{:type => dtype},{:path => /#{@mongo_id_root}/}]},{:_id => BSON::ObjectId.from_string(@mongo_id_root)}]}).to_a
+      @full_data = data
       data.each do |v_data|
         h = v_data.to_h
         if h['_id'].to_s == @mongo_id_root
           level_root = h['path'].split(',').count()
         end
-      end
-      @full_data = data
+
       split_data(data, dtype, level_root)
+      end
     end
   end
 
@@ -57,16 +60,18 @@ class Gecoscc2ldap
 
       count_not_found = 1
       data.each do |v|
-        v_hashed = v.to_h
+        array_hashed = v.to_h
+        v_hashed = convert_encoding(array_hashed)
         level_count = v_hashed["path"].split(',').count()
-        if level_count == level
+        if level_count >= level
           @id_hash.merge!(v_hashed["_id"].to_s => v_hashed["name"])
           level_tree = level_count
-          ldapmod(@ldap_host, @ldap_port, @ldap_auth, @ldap_pw, @ldap_treebase, v_hashed, dtype, level_tree) 
+          if level_count == level 
+            ldapmod(@ldap_host, @ldap_port, @ldap_auth, @ldap_pw, @ldap_treebase, v_hashed, dtype, level_tree) 
+          end
           count_not_found = 0
         end
       end
-
       if count_not_found == 1
         level = 0
       else
@@ -91,16 +96,18 @@ class Gecoscc2ldap
   def build_mongo_dn(name, path, type, treebase)
     dn = treebase
     data = @full_data.to_a
+    v_hashed = {}
     data.each do |v|
-      v_hashed = v.to_h
+      array_hashed = v.to_h
+      v_hashed = convert_encoding(array_hashed)
       if v_hashed["name"] == name and v_hashed["path"] == path
        
-       array_path = v_hashed["path"].split(',')
-       # removing 2 first id from path (root and main ou)
-       array_path.shift(2)
-       array_path.each do |id| 
-       dn.insert(0, "ou=#{@id_hash[id]},")
-       end
+        array_path = v_hashed["path"].split(',')
+        # removing 2 first id from path (root and main ou)
+        array_path.shift(2)
+        array_path.each do |id| 
+        dn.insert(0, "ou=#{@id_hash[id]},")
+        end
       end
     end
     if type == 'ou'
@@ -111,10 +118,19 @@ class Gecoscc2ldap
     return dn
   end
 
+  def convert_encoding(array_hashed)
+    array_hashed.each_pair do |k,v|
+      if v.class == String
+        replacements = [ ['í','i'],['á','a'],['é','e'],['ó','o'],['ú','u'],['ñ','n'] ]
+        replacements.each {|replacement| v.gsub!(replacement[0], replacement[1])}
+      end
+    end
+    return array_hashed
+  end
+
   def check_ldap(ldap, ldap_treebase, data, level_tree)
     treebase = ldap_treebase.gsub(' ','')
     check = 0
-
     dn = build_mongo_dn(data["name"], data["path"], data["type"], treebase)
     if data["type"] == 'ou'
       filter = Net::LDAP::Filter.eq('ou', '*')
@@ -222,22 +238,23 @@ class Gecoscc2ldap
 
   def mod_ldap_data(ldap, data_hashed, treebase, dn)
     if data_hashed["type"] == 'ou'
+      puts "Mod OU #{data_hashed['name']}"
       if !data_hashed['extra'].empty?; ldap.replace_attribute(dn, :GecosExtra ,data_hashed['extra'])  ; end
       if !data_hashed['master'].empty?; ldap.replace_attribute(dn, :GecosMaster ,data_hashed['master']) ; end
       if !data_hashed['source'].empty?; ldap.replace_attribute(dn, :GecosSource ,data_hashed['source']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
       if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['type']) ; end
-      ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
+      ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s) 
     elsif data_hashed["type"] =='user'
-      puts "Mod User #{data_hashed['name']}"
+
+      puts "Mod user #{data_hashed['name']}"
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :sn, data_hashed['name']); end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
       if !data_hashed['type'].empty?; ldap.replace_attribute(dn, :GecosType, data_hashed['type']) ; end
       ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
     elsif data_hashed["type"] =='computer'
-      puts "Mod computer #{data_hashed['name']}"
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :cn ,data_hashed['name']) ; end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
@@ -246,7 +263,6 @@ class Gecoscc2ldap
       if !data_hashed['node_chef_id'].empty?; ldap.replace_attribute(dn, :gecosNodeChefId, data_hashed['node_chef_id']); end
       ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
     elsif data_hashed["type"] =='group'
-      puts "Mod group #{data_hashed['name']}"
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :cn ,data_hashed['name']) ; end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
@@ -254,7 +270,6 @@ class Gecoscc2ldap
       if !data_hashed['members'].empty?; ldap.replace_attribute(dn, :gecosMembers, data_hashed['members'].to_s); end
       ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
     elsif data_hashed["type"] =='storage'
-      puts "Mod Storage #{data_hashed['name']}"
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :cn ,data_hashed['name']) ; end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
@@ -262,7 +277,6 @@ class Gecoscc2ldap
       if !data_hashed['uri'].empty?; ldap.replace_attribute(dn, :gecosRemoteDiskUri, data_hashed['uri']); end
       ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
     elsif data_hashed["type"] =='repository'
-      puts "Mod Repository #{data_hashed['name']}"
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :cn ,data_hashed['name']) ; end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
@@ -274,7 +288,6 @@ class Gecoscc2ldap
       if !data_hashed['distribution'].empty?; ldap.replace_attribute(dn, :gecosRepoDistribution, data_hashed['distribution']); end
       ldap.replace_attribute(dn, :GecosId, data_hashed['_id'].to_s)
     elsif data_hashed["type"] =='printer'
-      puts "Mod Printer #{data_hashed['name']}"
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :GecosName ,data_hashed['name']) ; end
       if !data_hashed['name'].empty?; ldap.replace_attribute(dn, :cn ,data_hashed['name']) ; end
       if !data_hashed['path'].empty?; ldap.replace_attribute(dn, :GecosPath, data_hashed['path']) ; end
@@ -299,7 +312,7 @@ class Gecoscc2ldap
   def insert_ldap_data(ldap, data_hashed, treebase, dn)
     attributes = {}
     if data_hashed["type"] == 'ou'
-    puts "Adding OU #{data_hashed['name']}"
+puts "Insert  OU #{data_hashed['name']}"
       if !data_hashed['extra'].empty?; attributes.merge!(:gecosExtra => data_hashed['extra']) ; end
       #if !data_hashed['master'].empty?; attributes.merge!(:gecosMaster => data_hashed['master']) ; end
       #if !data_hashed['source'].empty?; attributes.merge!(:gecosSource => data_hashed['source']) ; end
@@ -311,7 +324,8 @@ class Gecoscc2ldap
       ldap.add(:dn => dn, :attributes => attributes)
       #p ldap.get_operation_result
     elsif data_hashed["type"] == 'user'
-      puts "Adding User #{data_hashed['name']}"
+
+puts "Insert  user #{data_hashed['name']}"
       if !data_hashed['name'].empty?; attributes.merge!(:gecosName => data_hashed['name']) ; end
       if !data_hashed['name'].empty?; attributes.merge!(:sn => data_hashed['name']) ; end
       if !data_hashed['type'].empty?; attributes.merge!(:gecosType => data_hashed['type']) ; end
@@ -321,7 +335,6 @@ class Gecoscc2ldap
       ldap.add(:dn => dn, :attributes => attributes)
       #p ldap.get_operation_result
    elsif data_hashed["type"] == 'computer'
-      puts "Adding Computer #{data_hashed['name']}"
       if !data_hashed['name'].empty?; attributes.merge!(:gecosName => data_hashed['name']) ; end
       if !data_hashed['family'].empty?; attributes.merge!(:gecosFamily => data_hashed['family']) ; end
       if !data_hashed['type'].empty?; attributes.merge!(:gecosType => data_hashed['type']) ; end
@@ -330,11 +343,9 @@ class Gecoscc2ldap
       attributes.merge!(:cn => data_hashed['name'])
       attributes.merge!(:gecosID => data_hashed['_id'].to_s)
       attributes.merge!(:objectclass => ['olcSchemaConfig','gecoscc','gecosComputer'])
-      p attributes
       ldap.add(:dn => dn, :attributes => attributes)
       #p ldap.get_operation_result
    elsif data_hashed["type"] == 'group'
-      puts "Adding Group #{data_hashed['name']}"
       if !data_hashed['name'].empty?; attributes.merge!(:gecosName => data_hashed['name']) ; end
       if !data_hashed['path'].empty?; attributes.merge!(:gecosPath => data_hashed['path']) ; end
       if !data_hashed['type'].empty?; attributes.merge!(:gecosType => data_hashed['type']) ; end
@@ -342,11 +353,9 @@ class Gecoscc2ldap
       attributes.merge!(:cn => data_hashed['name'])
       attributes.merge!(:gecosID => data_hashed['_id'].to_s)
       attributes.merge!(:objectclass => ['olcSchemaConfig','gecoscc','gecosGroup'])
-      p attributes
       ldap.add(:dn => dn, :attributes => attributes)
       #p ldap.get_operation_result
    elsif data_hashed["type"] == 'storage'
-      puts "Adding Storage #{data_hashed['name']}"
       if !data_hashed['name'].empty?; attributes.merge!(:gecosName => data_hashed['name']) ; end
       if !data_hashed['path'].empty?; attributes.merge!(:gecosPath => data_hashed['path']) ; end
       if !data_hashed['type'].empty?; attributes.merge!(:gecosType => data_hashed['type']) ; end
@@ -354,11 +363,9 @@ class Gecoscc2ldap
       attributes.merge!(:cn => data_hashed['name'])
       attributes.merge!(:gecosID => data_hashed['_id'].to_s)
       attributes.merge!(:objectclass => ['olcSchemaConfig','gecoscc','gecosRemoteDisk'])
-      p attributes
       ldap.add(:dn => dn, :attributes => attributes)
       #p ldap.get_operation_result
    elsif data_hashed["type"] == 'repository'
-      puts "Adding Repository #{data_hashed['name']}"
       if !data_hashed['name'].empty?; attributes.merge!(:gecosName => data_hashed['name']) ; end
       if !data_hashed['path'].empty?; attributes.merge!(:gecosPath => data_hashed['path']) ; end
       if !data_hashed['type'].empty?; attributes.merge!(:gecosType => data_hashed['type']) ; end
@@ -373,7 +380,6 @@ class Gecoscc2ldap
       ldap.add(:dn => dn, :attributes => attributes)
       #p ldap.get_operation_result
    elsif data_hashed["type"] == 'printer'
-      puts "Adding Printer #{data_hashed['name']}"
       if !data_hashed['name'].empty?; attributes.merge!(:gecosName => data_hashed['name']) ; end
       if !data_hashed['path'].empty?; attributes.merge!(:gecosPath => data_hashed['path']) ; end
       if !data_hashed['type'].empty?; attributes.merge!(:gecosType => data_hashed['type']) ; end
@@ -392,7 +398,7 @@ class Gecoscc2ldap
       attributes.merge!(:gecosID => data_hashed['_id'].to_s)
       attributes.merge!(:objectclass => ['olcSchemaConfig','gecoscc','gecosPrinter'])
       ldap.add(:dn => dn, :attributes => attributes)
-      p ldap.get_operation_result
+      #p ldap.get_operation_result
     end
 
   end
