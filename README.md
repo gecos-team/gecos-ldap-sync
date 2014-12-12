@@ -8,7 +8,7 @@ gecos-ldap-sync
 Importer code should works on ruby 2.x
 
 ##### Ldap
-The schemas must add to a Openldap instance, the schema is inside of ldap_schemas subdir
+The importer use a specific ldap schema, schemas must be added to a Openldap instance, you can find the schema inside of ldap_schemas subdir
 
 ##### Installation
 Just run "bundle" inside importer directory, all dependencies will be installed
