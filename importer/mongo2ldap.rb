@@ -9,7 +9,7 @@ mongo_id_root = "54887421e138230df51e66c1"
 mongo_host = 'localhost'
 mongo_db = 'gecoscc'
 mongo_port = '27017'
-data_types = ['ou', 'user','computer','group','storage','repository', 'repository']
+data_types = ['ou', 'user','computer','group','storage','repository', 'printer']
 ldap_host = '172.17.0.14'
 ldap_port = '389'
 ldap_auth = 'cn=admin,dc=test,dc=com'
