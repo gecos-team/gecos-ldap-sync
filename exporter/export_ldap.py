@@ -4,13 +4,15 @@ import tempfile
 import ldap
 import requests
 
+
+from optparse import OptionParser
+
 try:
     from lxml import etree as ET
     ET_KWARGS = {'pretty_print': True}
 except ImportError:
     import xml.etree.cElementTree as ET
     ET_KWARGS = {}
-
 
 LDAP_SERVER_EMG = 'ldap://LDAP_URL:389'
 BIND_DN = 'cn=admin,dc=test,dc=com'
@@ -26,12 +28,67 @@ GECOSCC_API_MASTER = True  # True LDAP is master, False GCC is master
 SYSTEM_TYPE = 'ldap'
 
 
+parser = OptionParser()
+parser.add_option("-l", "--ldap-url", dest="ldap_url")
+parser.add_option("-d", "--ldap-bind-dn", dest="ldap_bind_dn")
+parser.add_option("-p", "--ldap-bind-pass", dest="ldap_bind_pass")
+parser.add_option("-b", "--ldap-base-dn", dest="ldap_base_dn")
+parser.add_option("-s", "--ldap-search-scope", dest="ldap_search_scope")
+
+parser.add_option("-g", "--gecoscc-url", dest="gecoscc_url")
+parser.add_option("-u", "--gecoscc-username", dest="gecoscc_username")
+parser.add_option("-w", "--gecoscc-password", dest="gecoscc_password")
+parser.add_option("-i", "--gecoscc-domain-id", dest="gecoscc_domain_id")
+parser.add_option("-m", "--gecoscc-master", dest="gecoscc_master", action='store_true')
+parser.add_option("-t", "--system-type", dest="system_type")
+
+
 class NoUniqueException(Exception):
     pass
 
 
 class NoLDAPDataException(Exception):
     pass
+
+
+def parser_input():
+    (options, args) = parser.parse_args()
+    global LDAP_SERVER_EMG, BIND_DN, BIND_PASS, BASE_DN, SEARCH_SCOPE
+    global GECOSCC_API_URL, GECOSCC_API_USERNAME, GECOSCC_API_PASSWORD
+    global GECOSCC_API_DOMAIN_ID, GECOSCC_API_MASTER, SYSTEM_TYPE
+
+    if options.ldap_url is not None:
+        LDAP_SERVER_EMG = options.ldap_url
+
+    if options.ldap_bind_dn is not None:
+        BIND_DN = options.ldap_bind_dn
+
+    if options.ldap_bind_pass is not None:
+        BIND_PASS = options.ldap_bind_pass
+
+    if options.ldap_base_dn is not None:
+        BASE_DN = options.ldap_base_dn
+
+    if options.ldap_search_scope is not None:
+        SEARCH_SCOPE = options.ldap_search_scope
+
+    if options.gecoscc_url is not None:
+        GECOSCC_API_URL = options.gecoscc_url
+
+    if options.gecoscc_username is not None:
+        GECOSCC_API_USERNAME = options.gecoscc_username
+
+    if options.gecoscc_domain_id is not None:
+        GECOSCC_API_DOMAIN_ID = options.gecoscc_domain_id
+
+    if options.gecoscc_password is not None:
+        GECOSCC_API_PASSWORD = options.gecoscc_password
+
+    if options.gecoscc_master is not None:
+        GECOSCC_API_MASTER = options.gecoscc_master
+
+    if options.system_type is not None:
+        SYSTEM_TYPE = options.system_type
 
 
 def connection_to_ldap():
@@ -175,6 +232,7 @@ def create_file_and_send(domain_xml):
 
 
 def main():
+    parser_input()
     lcon = connection_to_ldap()
     if not lcon:
         print 'Connection error'
