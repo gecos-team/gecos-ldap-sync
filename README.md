@@ -37,3 +37,17 @@ you should configure the next variables in the top of the file mongo2ldap.rb to 
 ``` ldap_treebase ``` The base of the tree in ldap to start importing data, like "dc=test, dc=com"
 
 
+
+## Exporter
+
+#### Python version
+Exporter code should works on python 2.x
+
+##### Installation
+
+python setup.py install
+
+##### Configuration
+you should configure the next params:
+
+export_ldap --help
