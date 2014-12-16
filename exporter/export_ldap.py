@@ -21,8 +21,8 @@ BASE_DN = 'dc=test,dc=com'
 SEARCH_SCOPE = ldap.SCOPE_SUBTREE
 
 GECOSCC_API_URL = "http://gecoscc/api/ad_import/"  # This is a demo GECOSCC
-GECOSCC_API_USERNAME = "adminemergya"
-GECOSCC_API_PASSWORD = "adminemergya"
+GECOSCC_API_USERNAME = "admin"
+GECOSCC_API_PASSWORD = "admin"
 GECOSCC_API_DOMAIN_ID = "5480374100251c1770b7819e"  # Domain id
 GECOSCC_API_MASTER = True  # True LDAP is master, False GCC is master
 SYSTEM_TYPE = 'ldap'
@@ -39,7 +39,7 @@ parser.add_option("-g", "--gecoscc-url", dest="gecoscc_url")
 parser.add_option("-u", "--gecoscc-username", dest="gecoscc_username")
 parser.add_option("-w", "--gecoscc-password", dest="gecoscc_password")
 parser.add_option("-i", "--gecoscc-domain-id", dest="gecoscc_domain_id")
-parser.add_option("-m", "--gecoscc-master", dest="gecoscc_master", action='store_true')
+parser.add_option("-m", "--gecoscc-master", dest="gecoscc_master", action='store_false')
 parser.add_option("-t", "--system-type", dest="system_type")
 
 
@@ -84,7 +84,7 @@ def parser_input():
     if options.gecoscc_password is not None:
         GECOSCC_API_PASSWORD = options.gecoscc_password
 
-    if options.gecoscc_master is not None:
+    if options.gecoscc_master is False:
         GECOSCC_API_MASTER = options.gecoscc_master
 
     if options.system_type is not None:
@@ -205,11 +205,20 @@ def create_group_element(group, group_plural):
     group_xml.set('Description', '')
 
 
+def create_computer_element(computer, computer_plural):
+    computer_xml = ET.SubElement(computer_plural, 'Computer')
+    computer_xml.set('ObjectGUID', get_ldap_cn(computer))
+    computer_xml.set('DistinguishedName', get_ldap_cn(computer))
+    computer_xml.set('Name', get_ldap_attr(computer, 'cn'))
+    computer_xml.set('Description', '')
+    computer_xml.set('Family', get_ldap_attr(computer, 'gecosFamily'))
+    ET.SubElement(computer_xml, 'MemberOf')
+
+
 def create_file_and_send(domain_xml):
     tree = ET.ElementTree(domain_xml)
     f_xml = tempfile.NamedTemporaryFile()
     tree.write(f_xml.name, **ET_KWARGS)
-
     file_zip = tempfile.NamedTemporaryFile()
     f_zip = gzip.open(file_zip.name, 'wb')
 
@@ -261,6 +270,11 @@ def main():
 
     for group in groups:
         create_group_element(group, group_plural)
+
+    computer_plural = create_subelement_plural(domain_xml, 'Computers')
+    computers = search(lcon, 'objectClass=gecosComputer')
+    for computer in computers:
+        create_computer_element(computer, computer_plural)
 
     create_file_and_send(domain_xml)
 
