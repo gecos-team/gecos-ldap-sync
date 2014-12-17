@@ -220,6 +220,19 @@ def create_volume_element(volume, volume_plural):
     volume_xml.set('uNCName', get_ldap_attr(volume, 'gecosRemoteDiskUri'))
 
 
+def create_repo_element(repo, repo_plural):
+    repo_xml = ET.SubElement(repo_plural, 'Repository')
+    repo_xml.set('ObjectGUID', get_ldap_cn(repo))
+    repo_xml.set('DistinguishedName', get_ldap_cn(repo))
+    repo_xml.set('Name', get_ldap_attr(repo, 'cn'))
+    repo_xml.set('Description', '')
+    repo_xml.set('Components', get_ldap_attr(repo, 'gecosRepoComponents'))
+    repo_xml.set('Distribution', get_ldap_attr(repo, 'gecosRepoDistribution'))
+    repo_xml.set('RepoKey', get_ldap_attr(repo, 'gecosRepoKey'))
+    repo_xml.set('KeyServer', get_ldap_attr(repo, 'gecosRepoKeyServer'))
+    repo_xml.set('Uri', get_ldap_attr(repo, 'gecosRepoUri'))
+
+
 def create_group_index(groups):
     group_index = {}
     for group in groups:
@@ -300,12 +313,16 @@ def main():
     for printer in printers:
         create_printer_element(printer, printer_plural)
 
-
     volume_plural = create_subelement_plural(domain_xml, 'Volumes')
     volumes = search(lcon, 'objectClass=gecosRemoteDisk')
     for volume in volumes:
         create_volume_element(volume, volume_plural)
 
+
+    repo_plural = create_subelement_plural(domain_xml, 'Repositories')
+    repos = search(lcon, 'objectClass=gecosRepo')
+    for repo in repos:
+        create_repo_element(repo, repo_plural)
 
     group_plural = create_subelement_plural(domain_xml, 'Groups')
 
