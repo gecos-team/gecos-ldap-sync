@@ -186,6 +186,31 @@ def create_user_element(user, user_plural, group_index):
         item_xml.text = get_ldap_cn(group_index[gid])
 
 
+def create_computer_element(computer, computer_plural):
+    computer_xml = ET.SubElement(computer_plural, 'Computer')
+    computer_xml.set('ObjectGUID', get_ldap_cn(computer))
+    computer_xml.set('DistinguishedName', get_ldap_cn(computer))
+    computer_xml.set('Name', get_ldap_attr(computer, 'cn'))
+    computer_xml.set('Description', '')
+    computer_xml.set('Family', get_ldap_attr(computer, 'gecosFamily'))
+    ET.SubElement(computer_xml, 'MemberOf')
+
+
+def create_printer_element(printer, printer_plural):
+    printer_xml = ET.SubElement(printer_plural, 'Printer')
+    printer_xml.set('ObjectGUID', get_ldap_cn(printer))
+    printer_xml.set('DistinguishedName', get_ldap_cn(printer))
+    printer_xml.set('Name', get_ldap_attr(printer, 'cn'))
+    printer_xml.set('Description', '')
+    printer_xml.set('printerName', get_ldap_attr(printer, 'gecosPrinterManuf'))
+    printer_xml.set('driverName', get_ldap_attr(printer, 'gecosPrinterMod'))
+    printer_xml.set('PPDUri', get_ldap_attr(printer, 'gecosPrinterPpduri'))
+    printer_xml.set('PrintType', get_ldap_attr(printer, 'gecosPrinterPrinttype'))
+    printer_xml.set('Registry', get_ldap_attr(printer, 'gecosPrinterRegistry'))
+    printer_xml.set('Serial', get_ldap_attr(printer, 'gecosPrinterSerial'))
+    printer_xml.set('Uri', get_ldap_attr(printer, 'gecosPrinterUri'))
+
+
 def create_group_index(groups):
     group_index = {}
     for group in groups:
@@ -203,16 +228,6 @@ def create_group_element(group, group_plural):
     group_xml.set('DistinguishedName', get_ldap_cn(group))
     group_xml.set('Name', get_ldap_attr(group, 'cn'))
     group_xml.set('Description', '')
-
-
-def create_computer_element(computer, computer_plural):
-    computer_xml = ET.SubElement(computer_plural, 'Computer')
-    computer_xml.set('ObjectGUID', get_ldap_cn(computer))
-    computer_xml.set('DistinguishedName', get_ldap_cn(computer))
-    computer_xml.set('Name', get_ldap_attr(computer, 'cn'))
-    computer_xml.set('Description', '')
-    computer_xml.set('Family', get_ldap_attr(computer, 'gecosFamily'))
-    ET.SubElement(computer_xml, 'MemberOf')
 
 
 def create_file_and_send(domain_xml):
@@ -266,15 +281,20 @@ def main():
     for user in users:
         create_user_element(user, user_plural, group_index)
 
-    group_plural = create_subelement_plural(domain_xml, 'Groups')
-
-    for group in groups:
-        create_group_element(group, group_plural)
-
     computer_plural = create_subelement_plural(domain_xml, 'Computers')
     computers = search(lcon, 'objectClass=gecosComputer')
     for computer in computers:
         create_computer_element(computer, computer_plural)
+
+    printer_plural = create_subelement_plural(domain_xml, 'Printers')
+    printers = search(lcon, 'objectClass=gecosPrinter')
+    for printer in printers:
+        create_printer_element(printer, printer_plural)
+
+    group_plural = create_subelement_plural(domain_xml, 'Groups')
+
+    for group in groups:
+        create_group_element(group, group_plural)
 
     create_file_and_send(domain_xml)
 
