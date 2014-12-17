@@ -2,7 +2,7 @@
 
 require 'net-ldap'
 require 'mongo'
-require 'json'
+
 include Mongo
 
 mongo_id_root = "54887421e138230df51e66c1"
