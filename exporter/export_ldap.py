@@ -211,6 +211,15 @@ def create_printer_element(printer, printer_plural):
     printer_xml.set('Uri', get_ldap_attr(printer, 'gecosPrinterUri'))
 
 
+def create_volume_element(volume, volume_plural):
+    volume_xml = ET.SubElement(volume_plural, 'Volume')
+    volume_xml.set('ObjectGUID', get_ldap_cn(volume))
+    volume_xml.set('DistinguishedName', get_ldap_cn(volume))
+    volume_xml.set('Name', get_ldap_attr(volume, 'cn'))
+    volume_xml.set('Description', '')
+    volume_xml.set('uNCName', get_ldap_attr(volume, 'gecosRemoteDiskUri'))
+
+
 def create_group_index(groups):
     group_index = {}
     for group in groups:
@@ -290,6 +299,13 @@ def main():
     printers = search(lcon, 'objectClass=gecosPrinter')
     for printer in printers:
         create_printer_element(printer, printer_plural)
+
+
+    volume_plural = create_subelement_plural(domain_xml, 'Volumes')
+    volumes = search(lcon, 'objectClass=gecosRemoteDisk')
+    for volume in volumes:
+        create_volume_element(volume, volume_plural)
+
 
     group_plural = create_subelement_plural(domain_xml, 'Groups')
 
