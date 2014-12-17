@@ -318,7 +318,6 @@ def main():
     for volume in volumes:
         create_volume_element(volume, volume_plural)
 
-
     repo_plural = create_subelement_plural(domain_xml, 'Repositories')
     repos = search(lcon, 'objectClass=gecosRepo')
     for repo in repos:
